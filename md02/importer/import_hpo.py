@@ -16,14 +16,14 @@ class HPOImporter(BaseImporter):
     def __init__(self, argv):
         super().__init__(command=__file__, argv=argv)
         with self._driver.session() as session:
-            session.run(f"CREATE DATABASE {self._database} IF NOT EXISTS")
+            session.run(f"CREATE DATABASE {self.database} IF NOT EXISTS")
 
     def set_constraints(self):
         queries = ["CREATE CONSTRAINT n10s_unique_uri FOR (r:Resource) REQUIRE r.uri IS UNIQUE;",
                    "CREATE CONSTRAINT IF NOT EXISTS FOR (n:Resource) REQUIRE (n.id, n.uri) IS UNIQUE;",
                    "CREATE INDEX disease_id FOR (n:Disease) ON (n.id);",
                    "CREATE INDEX hpo_id FOR (n:Hpo) ON (n.id);"]
-        with self._driver.session(database=self._database) as session:
+        with self._driver.session(database=self.database) as session:
             for q in queries:
                 try:
                     session.run(q)
@@ -34,7 +34,7 @@ class HPOImporter(BaseImporter):
 
     def check_neo_semantics(self):
         query = 'SHOW PROCEDURES YIELD name WHERE name ="n10s.graphconfig.init"'
-        with self._driver.session(database=self._database) as session:
+        with self._driver.session(database=self.database) as session:
             r = session.run(query)
             if len(r.data()) == 0:
                 raise RuntimeError(
@@ -44,14 +44,14 @@ class HPOImporter(BaseImporter):
     def initialize_neo_semantics(self):
         # check if the RDF data is already imported
         test_query = "MATCH (n:Resource) RETURN n"
-        with self._driver.session(database=self._database) as session:
+        with self._driver.session(database=self.database) as session:
             r = session.run(test_query)
             if len(r.data()) == 0:
                 queries = ["CALL n10s.graphconfig.init();",
                            "CALL n10s.graphconfig.set({ handleVocabUris: 'IGNORE' });",
                            "CALL n10s.graphconfig.set({ applyNeo4jNaming: True });"]
 
-                with self._driver.session(database=self._database) as session:
+                with self._driver.session(database=self.database) as session:
                     for q in queries:
                         session.run(q)
                        
@@ -60,7 +60,7 @@ class HPOImporter(BaseImporter):
         query = """
                 CALL n10s.rdf.import.fetch("http://purl.obolibrary.org/obo/hp.owl","RDF/XML"); 
                 """
-        with self._driver.session(database=self._database) as session:
+        with self._driver.session(database=self.database) as session:
             session.run(query)
 
     def label_HPO_entities(self):
@@ -70,7 +70,7 @@ class HPOImporter(BaseImporter):
                 SET n:Hpo, 
                     n.id = coalesce(n.id, replace(apoc.text.replace(n.uri,'(.*)obo/',''),'_', ':'));
                 """
-        with self._driver.session(database=self._database) as session:
+        with self._driver.session(database=self.database) as session:
             session.run(query)
 
     def create_disease_entities(self):
@@ -83,7 +83,7 @@ class HPOImporter(BaseImporter):
                 ON CREATE SET dis.label = row[1]; 
                 """
 
-        with self._driver.session(database=self._database) as session:
+        with self._driver.session(database=self.database) as session:
             session.run(query)
 
     def create_rels_features_diseases(self):
@@ -99,7 +99,7 @@ class HPOImporter(BaseImporter):
                 MERGE (dis)-[:HAS_PHENOTYPIC_FEATURE]->(phe) 
                 """
 
-        with self._driver.session(database=self._database) as session:
+        with self._driver.session(database=self.database) as session:
             session.run(query)
 
     def add_base_properties_to_rels(self):
@@ -126,7 +126,7 @@ class HPOImporter(BaseImporter):
                     SET rel.aspect = row[10])
                 """
 
-        with self._driver.session(database=self._database) as session:
+        with self._driver.session(database=self.database) as session:
             session.run(query)
 
     def enrich_with_descriptive_properties(self):
@@ -163,13 +163,13 @@ class HPOImporter(BaseImporter):
                 END 
                 """
 
-        with self._driver.session(database=self._database) as session:
+        with self._driver.session(database=self.database) as session:
             session.run(query)
     
     def remove_unused_node(self):
         query = """
                 CALL apoc.periodic.iterate(
-                    "MATCH (n) RETURN id(n) as id",
+                    "MATCH (n:Resource) RETURN id(n) as id",
                     "MATCH (n)
                      WHERE id(n) = id AND
                            NOT (labels(n) = ['Resource', 'Hpo', 'Class'] OR
@@ -180,7 +180,7 @@ class HPOImporter(BaseImporter):
                 YIELD batches, total return batches, total
                 """
 
-        with self._driver.session(database=self._database) as session:
+        with self._driver.session(database=self.database) as session:
             session.run(query)
 
 
