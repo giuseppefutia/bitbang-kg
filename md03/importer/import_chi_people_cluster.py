@@ -1,5 +1,6 @@
 import sys
 import logging
+import time
 
 from util.base_importer import BaseImporter
 
@@ -179,16 +180,18 @@ class ChicagoPeopleSimilarity(BaseImporter):
             session.run(query=delete_query)
 
 if __name__ == '__main__':
-
     importing = ChicagoPeopleSimilarity(argv=sys.argv[1:])
     logging.info("Creating similarity IS_SIMILAR_TO relationships...")
     importing.create_people_similarity()
     logging.info("Creating WCC graph projection...")
     importing.project_wcc_graph()
+    time.sleep(5)
     logging.info("Running WCC algorithm...")
     importing.run_wcc()
+    time.sleep(5)
     logging.info("Deleting WCC projection...")
     importing.delete_wcc_projection()
+    time.sleep(5)
     logging.info("Creating person clusters...")
     importing.create_record_clusters()
     logging.info("Creating connections to clusters...")
@@ -197,8 +200,13 @@ if __name__ == '__main__':
     importing.create_final_names_of_clusters()
     logging.info("Creating Louvain projection....")
     importing.project_louvain_graph()
+    time.sleep(5)
     logging.info("Running Louvain algorithm...")
     importing.run_louvain()
+    time.sleep(5)
+    logging.info("Set Louvain cluster...")
+    importing.set_louvain_cluster()
     logging.info("Deleting Louvain projection...")
     importing.delete_louvain_projection()
+    time.sleep(5)
     importing.close()
