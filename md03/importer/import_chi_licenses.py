@@ -157,6 +157,7 @@ if __name__ == '__main__':
     if not licenses_dat.is_file():
         print(licenses_dat, "doesn't exist in ", base_path)
         sys.exit(1)
+
     logging.info("Setting constraints...")
     importing.set_constraints()
     logging.info("Importing license records...")
