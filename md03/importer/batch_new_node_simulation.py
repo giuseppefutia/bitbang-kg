@@ -7,7 +7,7 @@ import json
 
 from util.base_importer import BaseImporter
 from import_chi_people import ChicagoPeopleImporter
-from importer.import_chi_people_cluster import ChicagoPeopleSimilarity
+from import_chi_people_cluster import ChicagoPeopleSimilarity
 from cdc_service import CDCService
 
 logging.basicConfig(
@@ -17,16 +17,24 @@ logging.basicConfig(
 )
 
 class BatchProcessSimulator(BaseImporter):
+    """
+    This currently works with updates that affect a single cluster.
+    """
     def __init__(self, argv):
         super().__init__(command=__file__, argv=argv)
         self.cpi = ChicagoPeopleImporter(argv=sys.argv[1:])
         self.cps = ChicagoPeopleSimilarity(argv=sys.argv[1:])
+        self.record_ids = []
     
-    def start_cdc():
-        pass
+    def enable_cdc(self):
+        enable_cdc_query = """ALTER DATABASE {db} SET OPTION txLogEnrichment 'FULL'""".format(db=self.database)
+        with self._driver.session(database=self.database) as session:
+            session.run(enable_cdc_query)
 
-    def end_cdc():
-        pass
+    def disable_cdc(self):
+        disable_cdc_query = """ALTER DATABASE {db} SET OPTION txLogEnrichment 'OFF'""".format(db=self.database)
+        with self._driver.session(database=self.database) as session:
+            session.run(disable_cdc_query)
     
     def import_batch(self):
         cpi = ChicagoPeopleImporter(argv=sys.argv[1:])
@@ -79,7 +87,30 @@ class BatchProcessSimulator(BaseImporter):
         end_nodes = [i["end"]["elementId"] for i in events if i["operation"] == "c"]
         affected = list(set(start_nodes + end_nodes))
         with self._driver.session(database=self.database) as session:
-            session.run('MATCH (n:PersonRecord) WHERE elementId(n) in $affected SET n:Affected', {"affected": affected})
+            # Mark start nodes as "Affected"
+            session.run("""
+                        MATCH (n:PersonRecord)
+                        WHERE elementId(n) in $start_nodes
+                        SET n:Affected
+                        """, {"start_nodes": start_nodes})
+
+            # Mark and nodes as "Affected" and set newNode property
+            session.run("""
+                        MATCH (n:PersonRecord)
+                        WHERE elementId(n) in $end_nodes
+                        SET n:Affected
+                        SET n.newNode = True
+                        """, {"end_nodes": end_nodes})
+            
+            # Mark records attached to cluster as affected
+            session.run("""
+                        MATCH (n:PersonRecord)-[:RECORD_RESOLVED_TO]->(:Person)<-[:RECORD_RESOLVED_TO]-(x:PersonRecord)
+                        WHERE elementId(n) in $affected 
+                        SET x:Affected
+                        """, {"affected": affected})
+            
+            # Backup the original property
+            session.run('MATCH (n:Affected) SET n.oldComponentId = n.componentId')
     
     def remove_resolved_nodes(self, updated):
         events = [i['event'] for i in updated]
@@ -103,29 +134,69 @@ class BatchProcessSimulator(BaseImporter):
         with self._driver.session(database=self.database) as session:
             session.run(new_wcc_query)
         
+        # Delete projection
+        self.cps.delete_wcc_projection()
+        
         # Create Person nodes, create connections, remove affected
         resolved_query = """
         MATCH (n:PersonRecord:Affected)
         WITH n, n.componentId as component
         MERGE (e:Person {clusterId: component})
+        SET e.newCluster = true
         MERGE (n)-[:RECORD_RESOLVED_TO]->(e)
+        SET e.fullNames = coalesce(e.fullNames, []) + n.fullName
+        SET e.employerIds = coalesce(e.employerIds, []) + n.employerId
+        SET e.titles = coalesce(e.titles, []) + n.title
+        SET e.name = reduce(shortest = head(e.fullNames), name IN e.fullNames | CASE WHEN size(name) < size(shortest) THEN name ELSE shortest END)
+        SET c.name = shortestName
         REMOVE n:Affected
         """
         with self._driver.session(database=self.database) as session:
             session.run(resolved_query)
-        # Delete projection
-        self.cps.delete_wcc_projection()
-    
+        
+        # Create connections between Person and Organization nodes
+        per_org_query = """
+        MATCH (e:Person)
+        WHERE e.newCluster IS NOT NULL
+        MATCH (o:Organization)
+        WHERE o.id in e.employerIds
+        MERGE (e)-[r:BELONGS_TO_ORG]->(o)
+        SET r.roles = e.titles
+        """
+        with self._driver.session(database=self.database) as session:
+            session.run(per_org_query)
+        
     def clean_updates(self):
         with self._driver.session(database=self.database) as session:
-            session.run('MATCH (n:PersonRecord) WHERE n.pk = 10000001 DETACH DELETE n')
-        with self._driver.session(database=self.database) as session:
-            session.run('MATCH (n:Affected) REMOVE n:Affected')
+            # Remove new nodes
+            session.run("""MATCH (n:PersonRecord) WHERE n.newNode is NOT NULL DETACH DELETE n""")
+
+            # Restore original information of record connected to the new cluster
+            session.run("""
+                        MATCH (p:Person)<-[:RECORD_RESOLVED_TO]-(r:PersonRecord)
+                        WHERE p.newCluster IS NOT NULL
+                        SET r.componentId = r.oldComponentId REMOVE r.oldComponentId
+                        SET p.clusterId = r.componentId
+                        SET p.fullNames = []
+                        SET p.fullNames = coalesce(p.fullNames, []) + r.fullName
+                        SET p.employerIds = []
+                        SET p.employerIds = coalesce(p.employerIds, []) + r.employerId
+                        SET p.titles = []
+                        SET p.titles = coalesce(p.titles, []) + r.title
+                        SET p.newCluster = NULL
+                        SET p.name = reduce(shortest = head(p.fullNames), name IN p.fullNames | CASE WHEN size(name) < size(shortest) THEN name ELSE shortest END)
+                        """)
 
 if __name__ == '__main__':
     simulator = BatchProcessSimulator(argv=sys.argv[1:])
+    
     logging.info("Step 0 - Cleaning updates...")
     simulator.clean_updates()
+    time.sleep(1)
+
+    """
+    logging.info("Enabling CDC...")
+    simulator.enable_cdc()
     time.sleep(1)
 
     current_time = datetime.utcnow().isoformat()
@@ -156,3 +227,7 @@ if __name__ == '__main__':
     logging.info("Step 5 - Resolving new Person nodes...")
     simulator.apply_changes(operation="APPLY_NEW_RESOLUTION")
 
+    time.sleep(1)
+    logging.info("Disabling CDC...")
+    simulator.disable_cdc
+    """
