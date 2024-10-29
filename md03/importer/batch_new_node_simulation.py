@@ -148,7 +148,6 @@ class BatchProcessSimulator(BaseImporter):
         SET e.employerIds = coalesce(e.employerIds, []) + n.employerId
         SET e.titles = coalesce(e.titles, []) + n.title
         SET e.name = reduce(shortest = head(e.fullNames), name IN e.fullNames | CASE WHEN size(name) < size(shortest) THEN name ELSE shortest END)
-        SET c.name = shortestName
         REMOVE n:Affected
         """
         with self._driver.session(database=self.database) as session:
@@ -194,7 +193,6 @@ if __name__ == '__main__':
     simulator.clean_updates()
     time.sleep(1)
 
-    """
     logging.info("Enabling CDC...")
     simulator.enable_cdc()
     time.sleep(1)
@@ -230,4 +228,3 @@ if __name__ == '__main__':
     time.sleep(1)
     logging.info("Disabling CDC...")
     simulator.disable_cdc
-    """
