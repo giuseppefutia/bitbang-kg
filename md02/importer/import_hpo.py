@@ -20,7 +20,7 @@ class HPOImporter(BaseImporter):
 
     def set_constraints(self):
         queries = ["CREATE CONSTRAINT n10s_unique_uri FOR (r:Resource) REQUIRE r.uri IS UNIQUE;",
-                   "CREATE CONSTRAINT IF NOT EXISTS FOR (n:Resource) REQUIRE (n.id, n.uri) IS UNIQUE;",
+                   "CREATE CONSTRAINT IF NOT EXISTS FOR (n:Resource) REQUIRE (n.id) IS UNIQUE;",
                    "CREATE INDEX disease_id FOR (n:Disease) ON (n.id);",
                    "CREATE INDEX hpo_id FOR (n:Hpo) ON (n.id);"]
         with self._driver.session(database=self.database) as session:
