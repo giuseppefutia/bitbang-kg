@@ -22,3 +22,6 @@ cdc:
 
 simulate:
 	PYTHONPATH=../ $(PYTHON) importer/batch_new_node_simulation.py
+
+clean:
+	PYTHONPATH=../ $(PYTHON) importer/batch_new_node_clean.py

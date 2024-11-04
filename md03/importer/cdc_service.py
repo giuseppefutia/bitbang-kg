@@ -14,33 +14,31 @@ logging.basicConfig(
 class CDCService(BaseImporter):
     def __init__(self, argv):
         super().__init__(command=__file__, argv=argv)
-        self.cursor = None
+        self.cursor = self.current_change_id()
         self.selectors = []
-        self.phase = None
 
     def apply_change(self, record):
         record_dict = {
             k: record.get(k)
             for k in ('id', 'txId', 'seq', 'event', 'metadata')
         }
-        # print(json.dumps(record_dict, indent=2, default=repr))
+        return record_dict
+    
+    def apply_change_test(self, record):
+        record_dict = {
+            k: record.get(k)
+            for k in ('id', 'txId', 'seq', 'event', 'metadata')
+        }
+        print(json.dumps(record_dict, indent=2, default=repr))
         return record_dict
 
     def query_changes(self):
-        current = self.current_change_id()
         with self._driver.session(database=self.database) as session:
             res = session.run('CALL db.cdc.query($cursor, $selectors)',
                               cursor=self.cursor, selectors=self.selectors)
-            if res.peek() == None:
-                self.cursor = current
-            else:
-                for record in res:
-                    try:
-                        return self.apply_change(record)
-                    except Exception as e:
-                        print('Error whilst applying change', e)
-                        break
-                self.cursor = record['id']
+            for record in res:
+                self.apply_change_test(record)
+            self.cursor = self.current_change_id()
 
     def earliest_change_id(self):
         with self._driver.session(database=self.database) as session:

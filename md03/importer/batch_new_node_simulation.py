@@ -3,7 +3,6 @@ import sys
 import time
 from pathlib import Path
 from datetime import datetime
-import json
 
 from util.base_importer import BaseImporter
 from import_chi_people import ChicagoPeopleImporter
@@ -227,4 +226,4 @@ if __name__ == '__main__':
 
     time.sleep(1)
     logging.info("Disabling CDC...")
-    simulator.disable_cdc
+    simulator.disable_cdc()

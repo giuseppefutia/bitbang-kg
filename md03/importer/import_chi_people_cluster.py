@@ -27,7 +27,7 @@ class ChicagoPeopleSimilarity(BaseImporter):
         with self._driver.session(database=self.database) as session:
             result = session.run(full_name_query, {"nodes": nodes})
             for record in iter(result):
-                 yield dict(record)
+                yield dict(record)
     
     def count_record_rows(self, nodes=None):
         full_name_query = """
@@ -46,7 +46,7 @@ class ChicagoPeopleSimilarity(BaseImporter):
         with self._driver.session(database=self.database) as session:
             result = session.run(cluster_query,)
             for record in iter(result):
-                 yield dict(record)
+                yield dict(record)
     
     def count_cluster_rows(self):
         count_cluster_query = """
