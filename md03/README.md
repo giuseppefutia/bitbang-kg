@@ -5,7 +5,7 @@
 The goal of this module is to create a database to support the monitoring of public contracts released by the City of Chicago.
 
 ### Download source data (or db dump)
-You can download the input files from the following [folder](`https://drive.google.com/drive/folders/1I6JhP4mXR3V9vo8BifcdLqKyTHGDtKFn`). For directly loading the db dump, you can download the dump and load it into the db folder created by Neo4j Desktop.
+You can download the input files from the following [folder](https://drive.google.com/drive/folders/1I6JhP4mXR3V9vo8BifcdLqKyTHGDtKFn). For directly loading the db dump, you can download the dump and load it into the db folder created by Neo4j Desktop.
 
 ### Install requirements
 This module's `Makefile` assumes you have a virtual environemnt folder called `venv` 
