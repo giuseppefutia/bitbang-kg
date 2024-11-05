@@ -55,7 +55,7 @@ RETURN d
 ```
 
 Getting all diseases related to the "Abnormality of the endocrine system" (with reasoning):
-```
+```cypher
 MATCH (cat:Hpo {label: "Abnormality of the endocrine system"})
 CALL n10s.inference.nodesInCategory(cat, { 
     inCatRel: "HAS_PHENOTYPIC_FEATURE", subCatRel: "SUBCLASSOF"})
