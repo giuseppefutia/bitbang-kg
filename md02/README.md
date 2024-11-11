@@ -1,5 +1,6 @@
 # Module 2
-* [\[Google Slide Presentations\]](https://docs.google.com/presentation/d/1r08E8qqqLyIF61M6bpBZ3zR8341b5-DzeAIBOBPz9-I/edit?usp=sharing) - Course Presentation and Introduction to Graphs
+* [Course Presentation and Introduction to Graphs](https://docs.google.com/presentation/d/1r08E8qqqLyIF61M6bpBZ3zR8341b5-DzeAIBOBPz9-I/edit?usp=sharing)
+* [Neo4j Neo4j Use Cases on Structured Data](https://docs.google.com/presentation/d/1JhF5BLIviPmdjDAVxqDkm8aMFkoesHb_Us5GP-T4POk/edit?usp=sharing)
 
 ## Create your Neo4j Doctor database
 The goal of this module is to create a database to support medical practictioners in helping to detect rare diseases based on a collection of symptomps.

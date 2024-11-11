@@ -1,5 +1,5 @@
 # Module 3
-* [\[Google Slide Presentations\]](https://docs.google.com/presentation/d/1JhF5BLIviPmdjDAVxqDkm8aMFkoesHb_Us5GP-T4POk/edit?usp=sharing) - Neo4j Use Cases on Structured Data.
+* [Building KGs from Structured Data](https://docs.google.com/presentation/d/1lKcwYW3Z4NkoOhrzhqJFjHxPkweEDlknqvb8VE9Cqis/edit?usp=sharing)
 
 ## Create your public contracts monitoring system
 The goal of this module is to create a database to support the monitoring of public contracts released by the City of Chicago.
