@@ -31,7 +31,6 @@ make agent-llm question="Who are the top three influencers of cyclotron research
 ```
 
 The second type of agent leverages traditional Retrieval Augmented Generation (RAG) principles:
-
 ```shell
 make agent-rag question="Who are the top three influencers of cyclotron research? And what is known about them?"
 ```
