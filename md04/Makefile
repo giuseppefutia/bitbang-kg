@@ -9,5 +9,11 @@ import:
 	PYTHONPATH=../ $(PYTHON) importer/import_rac_gpt.py
 	PYTHONPATH=../ $(PYTHON) importer/import_rac_gds.py
 
-agent:
-	PYTHONPATH=../ $(PYTHON) rag/agent.py "$(question)"
+agent-llm:
+	PYTHONPATH=../ $(PYTHON) rag/agent_llm.py "$(question)"
+
+agent-rag:
+	PYTHONPATH=../ $(PYTHON) rag/agent_rag.py "$(question)"
+
+agent-graph-rag:
+	PYTHONPATH=../ $(PYTHON) rag/agent_graph_rag.py "$(question)"
