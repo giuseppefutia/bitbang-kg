@@ -42,3 +42,32 @@ To restore the database to its state before the batch import, you can run the fo
 ```shell
 make clean
 ```
+
+## Analysis
+Which Departments collaborate with the Person mentioned in Record 3218056?
+```cypher
+MATCH path1=(r:PersonRecord)-[:RECORD_RESOLVED_TO]->(p:Person)-[:BELONGS_TO_ORG]->(m:Organization)
+WHERE m.source = "LICENSES"  AND r.pk = 3218056 //Shawn Podgurski
+OPTIONAL MATCH path2=(m)-[:IS_SIMILAR_TO]->(n:Organization)<-[:HAS_VENDOR]-()-[:INCLUDED_IN_CONTRACT]->()<-[:ASSIGNS_CONTRACT]-(:Department)
+WHERE n.source = "CONTRACTS"
+RETURN path1, path2
+```
+
+Are there businesses with expired licenses still executing city contracts?
+```cypher
+MATCH p=(l:LicenseRecord)-[:ORG_HAS_LICENSE]-(n:Organization)-[r:IS_SIMILAR_TO]-(m:Organization)<-[:HAS_VENDOR]-(c:ContractRecord) 
+WHERE m.source = "CONTRACTS" AND n.source = "LICENSES" AND
+      c.startDate IS NOT NULL AND
+      l.endDate IS NOT NULL
+// Change date format
+WITH n, m, 
+     apoc.date.parse(c.startDate, "ms", "MM/dd/yyyy") AS startDate,
+     apoc.date.parse(l.endDate, "ms", "MM/dd/yyyy") as endDate
+// Process date string as dates
+WITH n, m,
+     date(datetime({epochmillis: startDate})) AS startDate,
+     date(datetime({epochmillis: endDate})) AS endDate
+WITH n, m, min(startDate) as ContractDate, max(endDate) as LicenseDate
+WHERE ContractDate > LicenseDate
+RETURN n.name as OrganizationInLicenses, m.name as OrganizationInContracts, ContractDate, LicenseDate
+```
