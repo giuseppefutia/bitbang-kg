@@ -1,5 +1,5 @@
 # Module 4
-TODO: Include Lecture slides.
+* [Building KGs from Unstructured Data](https://docs.google.com/presentation/d/18kDaJ6Gj_NRWWlDi9Qsf-t3XKiTy9hwEY4ddgevrsBs/edit?usp=sharing)
 
 The content of this module is inspired by the book repository: https://github.com/alenegro81/knowledge-graph-applied-book/.
 
