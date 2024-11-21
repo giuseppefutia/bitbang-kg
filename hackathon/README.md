@@ -1,5 +1,8 @@
 # Hackathon
 
+## Slides Template
+* [Hackathon Template](https://docs.google.com/presentation/d/1STsubliOKxbxcQ1JBAyOPiyL8QpbONftXOXYqexgNXU/edit?usp=sharing)
+
 ## Important Dates
 * **Development**: 22nd November 2024 (4 hours, in person)
 * **Conclusions**: 29th November 2024 (2 hours), with each group presenting for 10-15 minutes
